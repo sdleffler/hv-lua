@@ -38,6 +38,7 @@ hv-lua-derive = { version = "=0.6.0", optional = true, path = "../hv-dev/hv/crat
 bstr = { version = "0.2", features = ["std"], default_features = false }
 once_cell = { version = "1.0" }
 num-traits = { version = "0.2.14" }
+rustc-hash = "1.0"
 futures-core = { version = "0.3.5", optional = true }
 futures-task = { version = "0.3.5", optional = true }
 futures-util = { version = "0.3.5", optional = true }
