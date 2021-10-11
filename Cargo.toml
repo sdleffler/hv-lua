@@ -34,7 +34,7 @@ macros = ["hv-lua-derive/macros"]
 default = ["luajit", "macros", "hv-ecs", "send", "serialize"]
 
 [dependencies]
-hv-lua-derive = { version = "=0.6.0", optional = true, path = "../hv-lua-derive" }
+hv-lua-derive = { version = "=0.6.0", optional = true, path = "../hv-dev/hv/crates/hv-lua-derive" }
 bstr = { version = "0.2", features = ["std"], default_features = false }
 once_cell = { version = "1.0" }
 num-traits = { version = "0.2.14" }
@@ -43,16 +43,16 @@ futures-task = { version = "0.3.5", optional = true }
 futures-util = { version = "0.3.5", optional = true }
 serde = { version = "1.0", optional = true }
 erased-serde = { version = "0.3", optional = true }
-hv-ecs = { version = "0.1.0", path = "../hv-ecs", optional = true }
-hv-sync = { version = "0.1.0", path = "../hv-sync" }
-hv-alchemy = { version = "0.1.0", path = "../hv-alchemy" }
-hv-math = { version = "0.1.0", path = "../hv-math" }
+hv-ecs = { version = "0.1.0", optional = true }
+hv-sync = { version = "0.1.0", path = "../hv-dev/hv/crates/hv-sync" }
+hv-alchemy = { version = "0.1.0" }
+hv-math = { version = "0.1.0", path = "../hv-dev/hv/crates/hv-math" }
 static_assertions = "1.1.0"
 
 # External integrations.
 nalgebra = { version = "0.29.0", optional = true }
 parry3d = { version = "0.7.1", optional = true }
-hv-guarded-borrow = { version = "0.1.1", path = "../hv-guarded-borrow" }
+hv-guarded-borrow = { version = "0.1.1" }
 
 [build-dependencies]
 cc = { version = "1.0" }
@@ -71,7 +71,7 @@ tokio = { version = "1.0", features = ["full"] }
 futures-timer = "3.0"
 serde_json = "1.0"
 maplit = "1.0"
-hv = { path = "../..", package = "heavy" }
+hv = { path = "../hv-dev/hv", package = "heavy" }
 
 [[bench]]
 name = "benchmark"

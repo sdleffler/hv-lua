@@ -705,7 +705,11 @@ where
 /// This struct is created by the [`Table::sequence_values`] method.
 ///
 /// [`Table::sequence_values`]: crate::Table::sequence_values
+<<<<<<< HEAD
 pub struct TableSequenceIter<'lua, V> {
+=======
+pub struct TableSequence<'lua, V> {
+>>>>>>> ed48b11 (Update documentation references)
     table: LuaRef<'lua>,
     index: Option<Integer>,
     len: Option<Integer>,
