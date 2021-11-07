@@ -76,7 +76,10 @@ struct ExtraData {
     // be stored 'static-ally
     multivalue_vec_pool: Vec<(*mut (), usize, usize)>,
 
+    #[cfg(not(feature = "send"))]
     app_data: RefCell<HashMap<TypeId, Box<dyn Any>>>,
+    #[cfg(feature = "send")]
+    app_data: RefCell<HashMap<TypeId, Box<dyn Any + Send>>>,
 
     libs: StdLib,
     mem_info: Option<Box<MemoryInfo>>,
