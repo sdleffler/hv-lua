@@ -772,7 +772,7 @@ impl Lua {
             if ffi::lua_getstack(self.state, level as c_int, &mut ar) == 0 {
                 return None;
             }
-            Some(Debug::new_owned(self.state, ar))
+            Some(Debug::new_owned(self, ar))
         }
     }
 
