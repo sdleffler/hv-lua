@@ -24,13 +24,13 @@ pub fn lua_module(attr: TokenStream, item: TokenStream) -> TokenStream {
     let ext_entrypoint_name = Ident::new(&format!("luaopen_{}", func_name), Span::call_site());
 
     let wrapped = quote! {
-        ::mlua::require_module_feature!();
+        ::hv::lua::require_module_feature!();
 
         #func
 
         #[no_mangle]
-        unsafe extern "C" fn #ext_entrypoint_name(state: *mut ::mlua::lua_State) -> ::std::os::raw::c_int {
-            ::mlua::Lua::init_from_ptr(state)
+        unsafe extern "C" fn #ext_entrypoint_name(state: *mut ::hv::lua::lua_State) -> ::std::os::raw::c_int {
+            ::hv::lua::Lua::init_from_ptr(state)
                 .entrypoint1(#func_name)
                 .expect("cannot initialize module")
         }
@@ -60,8 +60,14 @@ pub fn chunk(input: TokenStream) -> TokenStream {
         quote! { env.raw_set(#cap_name, #cap)?; }
     });
 
+    #[cfg(feature = "hv-reexport")]
+    let hv_lua_path = quote! { ::hv::lua };
+
+    #[cfg(not(feature = "hv-reexport"))]
+    let hv_lua_path = quote! { ::hv_lua };
+
     let wrapped_code = quote! {{
-        use ::mlua::{AsChunk, ChunkMode, Lua, Result, Value};
+        use #hv_lua_path::{AsChunk, ChunkMode, Lua, Result, Value};
         use ::std::marker::PhantomData;
         use ::std::sync::Mutex;
 

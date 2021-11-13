@@ -24,7 +24,6 @@ use hv_alchemy::{
 };
 use hv_guarded_borrow::{NonBlockingGuardedBorrow, NonBlockingGuardedMutBorrowMut};
 
-use crate::table::{Table, TablePairsIter};
 use crate::types::{Callback, LuaRef, MaybeSend};
 use crate::util::{check_stack, get_userdata, take_userdata, StackGuard};
 use crate::value::{FromLua, FromLuaMulti, ToLua, ToLuaMulti};
@@ -35,6 +34,10 @@ use crate::{
 use crate::{ffi, RegistryKey};
 use crate::{function::Function, types::MaybeSync};
 use crate::{hv::alchemy::MetaType, lua::Lua};
+use crate::{
+    table::{Table, TablePairsIter},
+    Value,
+};
 
 #[cfg(feature = "lua54")]
 use std::os::raw::c_int;

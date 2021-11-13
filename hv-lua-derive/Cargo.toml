@@ -1,17 +1,17 @@
 [package]
-name = "mlua_derive"
+name = "hv-lua-derive"
 version = "0.6.0"
-authors = ["Aleksandr Orlenko <zxteam@pm.me>"]
+authors = ["Shea 'Decibel' Leffler <shea@errno.com>", "Aleksandr Orlenko <zxteam@pm.me>"]
 edition = "2018"
-description = "Procedural macros for the mlua crate."
-repository = "https://github.com/khvzak/mlua"
-keywords = ["lua", "mlua"]
+description = "Procedural macros for the hv-lua crate."
+keywords = ["lua", "hv-lua", "hv"]
 license = "MIT"
 
 [lib]
 proc-macro = true
 
 [features]
+hv-reexport = []
 macros = ["proc-macro-error", "itertools", "regex", "once_cell"]
 
 [dependencies]

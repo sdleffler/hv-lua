@@ -24,6 +24,7 @@ use crate::types::{
     Callback, CallbackUpvalue, DestructedUserdataMT, HookCallback, Integer, LightUserData, LuaRef,
     MaybeSend, Number, RegistryKey,
 };
+use crate::userdata::TryCloneToUserDataExt;
 use crate::userdata::{
     AnyUserData, MetaMethod, UserData, UserDataCell, UserDataFields, UserDataMethods,
 };
@@ -34,10 +35,6 @@ use crate::util::{
     push_table, rawset_field, safe_pcall, safe_xpcall, StackGuard, WrappedFailure,
 };
 use crate::value::{FromLua, FromLuaMulti, MultiValue, Nil, ToLua, ToLuaMulti, Value};
-use crate::{
-    error::{Error, Result},
-    userdata::TryCloneToUserDataExt,
-};
 
 #[cfg(not(feature = "lua54"))]
 use crate::util::push_userdata;
@@ -1629,7 +1626,7 @@ impl Lua {
     /// # Examples
     ///
     /// ```
-    /// use mlua::{Lua, Result};
+    /// use hv::lua::{Lua, Result};
     ///
     /// fn hello(lua: &Lua, _: ()) -> Result<()> {
     ///     let mut s = lua.app_data_mut::<&str>().unwrap();
