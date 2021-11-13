@@ -6,10 +6,12 @@ use std::{cell::RefCell, rc::Rc};
 #[cfg(feature = "lua54")]
 use std::sync::atomic::{AtomicI64, Ordering};
 
-use mlua::{
+use hv::lua::{
     AnyUserData, Error, ExternalError, Function, Lua, MetaMethod, Nil, Result, String, UserData,
     UserDataFields, UserDataMethods, Value,
 };
+
+use hv::alchemy::Type;
 
 #[test]
 fn test_user_data() -> Result<()> {
@@ -78,10 +80,6 @@ fn test_methods() -> Result<()> {
 
     check_methods(&lua, lua.create_userdata(MyUserData(42))?)?;
 
-    // Additionally check serializable userdata
-    #[cfg(feature = "serialize")]
-    check_methods(&lua, lua.create_ser_userdata(MyUserData(42))?)?;
-
     Ok(())
 }
 
@@ -91,6 +89,10 @@ fn test_metamethods() -> Result<()> {
     struct MyUserData(i64);
 
     impl UserData for MyUserData {
+        fn on_metatable_init(table: Type<Self>) {
+            table.add_clone().add_copy();
+        }
+
         fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
             methods.add_method("get", |_, data, ()| Ok(data.0));
             methods.add_meta_function(
@@ -117,9 +119,9 @@ fn test_metamethods() -> Result<()> {
                 let stateless_iter = lua.create_function(|_, (data, i): (MyUserData, i64)| {
                     let i = i + 1;
                     if i <= data.0 {
-                        return Ok(mlua::Variadic::from_iter(vec![i, i]));
+                        return Ok(hv::lua::Variadic::from_iter(vec![i, i]));
                     }
-                    return Ok(mlua::Variadic::new());
+                    return Ok(hv::lua::Variadic::new());
                 })?;
                 Ok((stateless_iter, data.clone(), 0))
             });
@@ -320,14 +322,6 @@ fn test_userdata_take() -> Result<()> {
     let rc = Arc::new(18);
     let userdata = lua.create_userdata(MyUserdata(rc.clone()))?;
     check_userdata_take(&lua, userdata, rc)?;
-
-    // Additionally check serializable userdata
-    #[cfg(feature = "serialize")]
-    {
-        let rc = Arc::new(18);
-        let userdata = lua.create_ser_userdata(MyUserdata(rc.clone()))?;
-        check_userdata_take(&lua, userdata, rc)?;
-    }
 
     Ok(())
 }

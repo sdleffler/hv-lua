@@ -9,8 +9,11 @@ use std::{mem, ptr, slice};
 
 use once_cell::sync::Lazy;
 
-use crate::error::{Error, Result};
 use crate::ffi;
+use crate::{
+    error::{Error, Result},
+    userdata::UserDataCell,
+};
 
 static METATABLE_CACHE: Lazy<HashMap<TypeId, u8>> = Lazy::new(|| {
     let mut map = HashMap::with_capacity(32);
@@ -299,7 +302,7 @@ pub unsafe fn get_userdata<T>(state: *mut ffi::lua_State, index: c_int) -> *mut 
 // userdata and gives it the special "destructed" userdata metatable. Userdata must not have been
 // previously invalidated, and this method does not check for this.
 // Uses 1 extra stack space and does not call checkstack.
-pub unsafe fn take_userdata<T>(state: *mut ffi::lua_State) -> T {
+pub(crate) unsafe fn take_userdata<T>(state: *mut ffi::lua_State) -> T {
     // We set the metatable of userdata on __gc to a special table with no __gc method and with
     // metamethods that trigger an error on access. We do this so that it will not be double
     // dropped, and also so that it cannot be used or identified as any particular userdata type
@@ -343,7 +346,7 @@ pub unsafe fn get_gc_userdata<T: Any>(state: *mut ffi::lua_State, index: c_int) 
 // captured `__index` if no matches found.
 // The same is also applicable for `__newindex` metamethod and `field_setters` table.
 // Internally uses 9 stack spaces and does not call checkstack.
-pub unsafe fn init_userdata_metatable<T>(
+pub unsafe fn init_userdata_metatable(
     state: *mut ffi::lua_State,
     metatable: c_int,
     field_getters: Option<c_int>,
@@ -478,7 +481,7 @@ pub unsafe fn init_userdata_metatable<T>(
         rawset_field(state, -2, "__newindex")?;
     }
 
-    ffi::lua_pushcfunction(state, userdata_destructor::<T>);
+    ffi::lua_pushcfunction(state, userdata_cell_destructor);
     rawset_field(state, -2, "__gc")?;
 
     ffi::lua_pushboolean(state, 0);
@@ -489,10 +492,18 @@ pub unsafe fn init_userdata_metatable<T>(
     Ok(())
 }
 
-pub unsafe extern "C" fn userdata_destructor<T>(state: *mut ffi::lua_State) -> c_int {
+pub unsafe extern "C" fn userdata_cell_destructor(state: *mut ffi::lua_State) -> c_int {
     // It's probably NOT a good idea to catch Rust panics in finalizer
     // Lua 5.4 ignores it, other versions generates `LUA_ERRGCMM` without calling message handler
-    take_userdata::<T>(state);
+    let ud = take_userdata::<UserDataCell>(state);
+    drop(ud.into_boxed());
+    0
+}
+
+pub unsafe extern "C" fn userdata_drop_destructor<T>(state: *mut ffi::lua_State) -> c_int {
+    // It's probably NOT a good idea to catch Rust panics in finalizer
+    // Lua 5.4 ignores it, other versions generates `LUA_ERRGCMM` without calling message handler
+    drop(take_userdata::<T>(state));
     0
 }
 
@@ -688,7 +699,7 @@ pub unsafe fn init_gc_metatable<T: Any>(
 
     push_table(state, 0, 3)?;
 
-    ffi::lua_pushcfunction(state, userdata_destructor::<T>);
+    ffi::lua_pushcfunction(state, userdata_drop_destructor::<T>);
     rawset_field(state, -2, "__gc")?;
 
     ffi::lua_pushboolean(state, 0);
@@ -752,9 +763,9 @@ pub unsafe fn init_error_registry(state: *mut ffi::lua_State) -> Result<()> {
                         (Some(error1), Some(error0)) => {
                             let _ = write!(&mut (*err_buf), "\ncaused by: {}", error0);
                             let s = error1.to_string();
-                            if let Some(traceback) = s.splitn(2, "\nstack traceback:\n").nth(1) {
+                            if let Some(traceback) = s.split_once("\nstack traceback:\n") {
                                 let _ =
-                                    write!(&mut (*err_buf), "\nstack traceback:\n{}", traceback);
+                                    write!(&mut (*err_buf), "\nstack traceback:\n{}", traceback.1);
                             }
                         }
                         (Some(error1), None) => {

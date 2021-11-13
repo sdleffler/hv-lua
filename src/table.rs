@@ -34,7 +34,7 @@ impl<'lua> Table<'lua> {
     /// Export a value as a global to make it usable from Lua:
     ///
     /// ```
-    /// # use mlua::{Lua, Result};
+    /// # use hv_lua::{Lua, Result};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let globals = lua.globals();
@@ -83,7 +83,7 @@ impl<'lua> Table<'lua> {
     /// Query the version of the Lua interpreter:
     ///
     /// ```
-    /// # use mlua::{Lua, Result};
+    /// # use hv_lua::{Lua, Result};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let globals = lua.globals();
@@ -139,7 +139,7 @@ impl<'lua> Table<'lua> {
     /// Compare two tables using `__eq` metamethod:
     ///
     /// ```
-    /// # use mlua::{Lua, Result, Table};
+    /// # use hv_lua::{Lua, Result, Table};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let table1 = lua.create_table()?;
@@ -364,7 +364,7 @@ impl<'lua> Table<'lua> {
     /// Iterate over all globals:
     ///
     /// ```
-    /// # use mlua::{Lua, Result, Value};
+    /// # use hv_lua::{Lua, Result, Value};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let globals = lua.globals();
@@ -378,10 +378,10 @@ impl<'lua> Table<'lua> {
     /// # }
     /// ```
     ///
-    /// [`Result`]: type.Result.html
+    /// [`Result`]: crate::Result
     /// [Lua manual]: http://www.lua.org/manual/5.3/manual.html#pdf-next
-    pub fn pairs<K: FromLua<'lua>, V: FromLua<'lua>>(self) -> TablePairs<'lua, K, V> {
-        TablePairs {
+    pub fn pairs<K: FromLua<'lua>, V: FromLua<'lua>>(self) -> TablePairsIter<'lua, K, V> {
+        TablePairsIter {
             table: self.0,
             key: Some(Nil),
             _phantom: PhantomData,
@@ -406,7 +406,7 @@ impl<'lua> Table<'lua> {
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Lua, Result, Table};
+    /// # use hv_lua::{Lua, Result, Table};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let my_table: Table = lua.load(r#"
@@ -427,10 +427,10 @@ impl<'lua> Table<'lua> {
     /// ```
     ///
     /// [`pairs`]: #method.pairs
-    /// [`Result`]: type.Result.html
+    /// [`Result`]: crate::Result
     /// [Lua manual]: http://www.lua.org/manual/5.3/manual.html#pdf-next
-    pub fn sequence_values<V: FromLua<'lua>>(self) -> TableSequence<'lua, V> {
-        TableSequence {
+    pub fn sequence_values<V: FromLua<'lua>>(self) -> TableSequenceIter<'lua, V> {
+        TableSequenceIter {
             table: self.0,
             index: Some(1),
             len: None,
@@ -444,8 +444,8 @@ impl<'lua> Table<'lua> {
     /// Unlike the `sequence_values`, does not invoke `__index` metamethod when iterating.
     ///
     /// [`sequence_values`]: #method.sequence_values
-    pub fn raw_sequence_values<V: FromLua<'lua>>(self) -> TableSequence<'lua, V> {
-        TableSequence {
+    pub fn raw_sequence_values<V: FromLua<'lua>>(self) -> TableSequenceIter<'lua, V> {
+        TableSequenceIter {
             table: self.0,
             index: Some(1),
             len: None,
@@ -458,9 +458,9 @@ impl<'lua> Table<'lua> {
     pub(crate) fn raw_sequence_values_by_len<V: FromLua<'lua>>(
         self,
         len: Option<Integer>,
-    ) -> TableSequence<'lua, V> {
+    ) -> TableSequenceIter<'lua, V> {
         let len = len.unwrap_or_else(|| self.raw_len());
-        TableSequence {
+        TableSequenceIter {
             table: self.0,
             index: Some(1),
             len: Some(len),
@@ -645,14 +645,14 @@ impl<'lua> Serialize for Table<'lua> {
 ///
 /// This struct is created by the [`Table::pairs`] method.
 ///
-/// [`Table::pairs`]: struct.Table.html#method.pairs
-pub struct TablePairs<'lua, K, V> {
+/// [`Table::pairs`]: crate::Table::pairs
+pub struct TablePairsIter<'lua, K, V> {
     table: LuaRef<'lua>,
     key: Option<Value<'lua>>,
     _phantom: PhantomData<(K, V)>,
 }
 
-impl<'lua, K, V> Iterator for TablePairs<'lua, K, V>
+impl<'lua, K, V> Iterator for TablePairsIter<'lua, K, V>
 where
     K: FromLua<'lua>,
     V: FromLua<'lua>,
@@ -704,8 +704,8 @@ where
 ///
 /// This struct is created by the [`Table::sequence_values`] method.
 ///
-/// [`Table::sequence_values`]: struct.Table.html#method.sequence_values
-pub struct TableSequence<'lua, V> {
+/// [`Table::sequence_values`]: crate::Table::sequence_values
+pub struct TableSequenceIter<'lua, V> {
     table: LuaRef<'lua>,
     index: Option<Integer>,
     len: Option<Integer>,
@@ -713,7 +713,7 @@ pub struct TableSequence<'lua, V> {
     _phantom: PhantomData<V>,
 }
 
-impl<'lua, V> Iterator for TableSequence<'lua, V>
+impl<'lua, V> Iterator for TableSequenceIter<'lua, V>
 where
     V: FromLua<'lua>,
 {

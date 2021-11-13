@@ -1,4 +1,4 @@
-use mlua::{Lua, Result, Value};
+use hv::lua::{Lua, Result, Value};
 
 #[test]
 fn test_value_eq() -> Result<()> {

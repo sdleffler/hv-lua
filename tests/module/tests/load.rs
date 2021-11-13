@@ -1,7 +1,9 @@
+#![cfg(not(feature = "vendored"))]
+
 use std::env;
 use std::path::PathBuf;
 
-use mlua::{Lua, Result};
+use hv::lua::{Lua, Result};
 
 #[test]
 fn test_module() -> Result<()> {

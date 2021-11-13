@@ -1,6 +1,6 @@
 //! This example shows a simple read-evaluate-print-loop (REPL).
 
-use mlua::{Error, Lua, MultiValue};
+use hv_lua::{Error, Lua, MultiValue};
 use rustyline::Editor;
 
 fn main() {
@@ -35,7 +35,7 @@ fn main() {
                     ..
                 }) => {
                     // continue reading input and append it to `line`
-                    line.push_str("\n"); // separate input lines
+                    line.push('\n'); // separate input lines
                     prompt = ">> ";
                 }
                 Err(e) => {

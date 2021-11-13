@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use mlua::{Lua, Result, String};
+use hv::lua::{Lua, Result, String};
 
 #[test]
 fn test_string_compare() {

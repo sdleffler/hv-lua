@@ -24,12 +24,8 @@ pub fn probe_lua() -> PathBuf {
 
     if !include_dir.is_empty() {
         if need_lua_lib {
-            if lib_dir.is_empty() {
-                panic!("LUA_LIB is not set");
-            }
-            if lua_lib.is_empty() {
-                panic!("LUA_LIB_NAME is not set");
-            }
+            assert!(!lib_dir.is_empty(), "LUA_LIB is not set");
+            assert!(!lua_lib.is_empty(), "LUA_LIB_NAME is not set");
 
             let mut link_lib = "";
             if get_env_var("LUA_LINK") == "static" {

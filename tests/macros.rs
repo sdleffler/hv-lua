@@ -1,13 +1,13 @@
 #![cfg(feature = "macros")]
 
-use mlua::{chunk, Lua, Result};
+use hv::lua::{chunk, from_table::FromTable, Lua, Result};
 
 #[test]
 fn test_chunk_macro() -> Result<()> {
     let lua = Lua::new();
 
     let name = "Rustacean";
-    let table = vec![1];
+    let table = FromTable(vec![1]);
 
     let data = lua.create_table()?;
     data.raw_set("num", 1)?;

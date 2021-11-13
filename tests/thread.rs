@@ -1,6 +1,6 @@
 use std::panic::catch_unwind;
 
-use mlua::{Error, Function, Lua, Result, Thread, ThreadStatus};
+use hv::lua::{Error, Function, Lua, Result, Thread, ThreadStatus};
 
 #[test]
 fn test_thread() -> Result<()> {
@@ -96,7 +96,7 @@ fn test_thread() -> Result<()> {
 #[test]
 #[cfg(any(feature = "lua54", all(feature = "luajit", feature = "vendored")))]
 fn test_thread_reset() -> Result<()> {
-    use mlua::{AnyUserData, UserData};
+    use hv::lua::{AnyUserData, UserData};
     use std::sync::Arc;
 
     let lua = Lua::new();

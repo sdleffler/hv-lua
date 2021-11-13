@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use mlua::{Lua, Result, UserData};
+use hv_lua::{Lua, Result, UserData};
 
 #[cfg(any(feature = "lua54", feature = "lua53", feature = "lua52"))]
-use mlua::Error;
+use hv_lua::Error;
 
 #[cfg(any(feature = "lua54", feature = "lua53", feature = "lua52"))]
 #[test]
@@ -71,7 +71,7 @@ fn test_gc_control() -> Result<()> {
 #[cfg(any(feature = "lua53", feature = "lua52"))]
 #[test]
 fn test_gc_error() {
-    use mlua::Error;
+    use hv_lua::Error;
 
     let lua = Lua::new();
     match lua

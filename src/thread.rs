@@ -33,7 +33,7 @@ pub enum ThreadStatus {
     ///
     /// If a thread is in this state, it can be resumed by calling [`Thread::resume`].
     ///
-    /// [`Thread::resume`]: struct.Thread.html#method.resume
+    /// [`Thread::resume`]: crate::Thread::resume
     Resumable,
     /// Either the thread has finished executing, or the thread is currently running.
     Unresumable,
@@ -49,8 +49,8 @@ pub struct Thread<'lua>(pub(crate) LuaRef<'lua>);
 ///
 /// Requires `feature = "async"`
 ///
-/// [`Future`]: ../futures_core/future/trait.Future.html
-/// [`Stream`]: ../futures_core/stream/trait.Stream.html
+/// [`Future`]: futures_core::future::Future
+/// [`Stream`]: futures_core::stream::Stream
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 #[derive(Debug)]
@@ -79,7 +79,7 @@ impl<'lua> Thread<'lua> {
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Error, Lua, Result, Thread};
+    /// # use hv_lua::{Error, Lua, Result, Thread};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let thread: Thread = lua.load(r#"
@@ -136,7 +136,7 @@ impl<'lua> Thread<'lua> {
                 return Err(pop_error(thread_state, ret));
             }
 
-            let mut results = MultiValue::new();
+            let mut results = MultiValue::new(lua);
             check_stack(lua.state, nresults + 2)?; // 2 is extra for `lua.pop_value()` below
             ffi::lua_xmove(thread_state, lua.state, nresults);
 
@@ -203,10 +203,10 @@ impl<'lua> Thread<'lua> {
         }
     }
 
-    /// Converts Thread to an AsyncThread which implements Future and Stream traits.
+    /// Converts Thread to an AsyncThread which implements [`Future`] and [`Stream`] traits.
     ///
     /// `args` are passed as arguments to the thread function for first call.
-    /// The object call `resume()` while polling and also allows to run rust futures
+    /// The object calls [`resume()`] while polling and also allows to run rust futures
     /// to completion using an executor.
     ///
     /// Using AsyncThread as a Stream allows to iterate through `coroutine.yield()`
@@ -215,10 +215,14 @@ impl<'lua> Thread<'lua> {
     ///
     /// Requires `feature = "async"`
     ///
+    /// [`Future`]: futures_core::future::Future
+    /// [`Stream`]: futures_core::stream::Stream
+    /// [`resume()`]: https://www.lua.org/manual/5.4/manual.html#lua_resume
+    ///
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Lua, Result, Thread};
+    /// # use hv_lua::{Lua, Result, Thread};
     /// use futures::stream::TryStreamExt;
     /// # #[tokio::main]
     /// # async fn main() -> Result<()> {

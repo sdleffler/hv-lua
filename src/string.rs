@@ -25,7 +25,7 @@ impl<'lua> String<'lua> {
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Lua, Result, String};
+    /// # use hv_lua::{Lua, Result, String};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let globals = lua.globals();
@@ -55,7 +55,7 @@ impl<'lua> String<'lua> {
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Lua, Result};
+    /// # use hv_lua::{Lua, Result};
     /// # fn main() -> Result<()> {
     /// let lua = Lua::new();
     ///
@@ -76,7 +76,7 @@ impl<'lua> String<'lua> {
     /// # Examples
     ///
     /// ```
-    /// # use mlua::{Lua, Result, String};
+    /// # use hv_lua::{Lua, Result, String};
     /// # fn main() -> Result<()> {
     /// # let lua = Lua::new();
     /// let non_utf8: String = lua.load(r#"  "test\255"  "#).eval()?;
@@ -121,7 +121,7 @@ impl<'lua> AsRef<[u8]> for String<'lua> {
 
 // Lua strings are basically &[u8] slices, so implement PartialEq for anything resembling that.
 //
-// This makes our `String` comparable with `Vec<u8>`, `[u8]`, `&str`, `String` and `mlua::String`
+// This makes our `String` comparable with `Vec<u8>`, `[u8]`, `&str`, `String` and `hv_lua::String`
 // itself.
 //
 // The only downside is that this disallows a comparison with `Cow<str>`, as that only implements

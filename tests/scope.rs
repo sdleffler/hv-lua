@@ -2,7 +2,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use mlua::{
+use hv_lua::{
     AnyUserData, Error, Function, Lua, MetaMethod, Result, String, UserData, UserDataFields,
     UserDataMethods,
 };

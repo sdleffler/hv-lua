@@ -8,7 +8,7 @@ use serde::de::{self, IntoDeserializer};
 
 use crate::error::{Error, Result};
 use crate::ffi;
-use crate::table::{Table, TablePairs, TableSequence};
+use crate::table::{Table, TablePairsIter, TableSequenceIter};
 use crate::value::Value;
 
 /// A struct for deserializing Lua values into Rust values.
@@ -23,11 +23,16 @@ pub struct Deserializer<'lua> {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub struct Options {
-    /// If true, an attempt to serialize types such as `Thread`, `UserData`, `LightUserData`
-    /// and `Error` will cause an error.
+    /// If true, an attempt to serialize types such as [`Thread`], [`UserData`], [`LightUserData`]
+    /// and [`Error`] will cause an error.
     /// Otherwise these types skipped when iterating or serialized as unit type.
     ///
     /// Default: **true**
+    ///
+    /// [`Thread`]: crate::Thread
+    /// [`UserData`]: crate::UserData
+    /// [`LightUserData`]: crate::LightUserData
+    /// [`Error`]: crate::Error
     pub deny_unsupported_types: bool,
 
     /// If true, an attempt to serialize a recursive table (table that refers to itself)
@@ -306,7 +311,7 @@ impl<'lua, 'de> serde::Deserializer<'de> for Deserializer<'lua> {
 }
 
 struct SeqDeserializer<'lua> {
-    seq: TableSequence<'lua, Value<'lua>>,
+    seq: TableSequenceIter<'lua, Value<'lua>>,
     options: Options,
     visited: Rc<RefCell<HashSet<*const c_void>>>,
 }
@@ -343,7 +348,7 @@ impl<'lua, 'de> de::SeqAccess<'de> for SeqDeserializer<'lua> {
 }
 
 struct MapDeserializer<'lua> {
-    pairs: TablePairs<'lua, Value<'lua>, Value<'lua>>,
+    pairs: TablePairsIter<'lua, Value<'lua>, Value<'lua>>,
     value: Option<Value<'lua>>,
     options: Options,
     visited: Rc<RefCell<HashSet<*const c_void>>>,

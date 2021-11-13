@@ -1,4 +1,4 @@
-use mlua::{Function, Lua, Result, String};
+use hv_lua::{Function, Lua, Result, String};
 
 #[test]
 fn test_function() -> Result<()> {
@@ -80,7 +80,7 @@ fn test_rust_function() -> Result<()> {
 fn test_c_function() -> Result<()> {
     let lua = Lua::new();
 
-    unsafe extern "C" fn c_function(state: *mut mlua::lua_State) -> std::os::raw::c_int {
+    unsafe extern "C" fn c_function(state: *mut hv_lua::lua_State) -> std::os::raw::c_int {
         let lua = Lua::init_from_ptr(state);
         lua.globals().set("c_function", true).unwrap();
         0
@@ -88,7 +88,7 @@ fn test_c_function() -> Result<()> {
 
     let func = unsafe { lua.create_c_function(c_function)? };
     func.call(())?;
-    assert_eq!(lua.globals().get::<_, bool>("c_function")?, true);
+    assert!(lua.globals().get::<_, bool>("c_function")?);
 
     Ok(())
 }

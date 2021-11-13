@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use mlua::{
+use hv::lua::{
     DeserializeOptions, Error, Lua, LuaSerdeExt, Result as LuaResult, SerializeOptions, UserData,
     Value,
 };
@@ -13,12 +13,16 @@ fn test_serialize() -> Result<(), Box<dyn std::error::Error>> {
     #[derive(Serialize)]
     struct MyUserData(i64, String);
 
-    impl UserData for MyUserData {}
+    impl UserData for MyUserData {
+        fn on_metatable_init(table: hv_alchemy::Type<Self>) {
+            table.add::<dyn erased_serde::Serialize>();
+        }
+    }
 
     let lua = Lua::new();
     let globals = lua.globals();
 
-    let ud = lua.create_ser_userdata(MyUserData(123, "test userdata".into()))?;
+    let ud = lua.create_userdata(MyUserData(123, "test userdata".into()))?;
     globals.set("ud", ud)?;
     globals.set("null", lua.null())?;
 
@@ -75,11 +79,15 @@ fn test_serialize_in_scope() -> LuaResult<()> {
     #[derive(Serialize, Clone)]
     struct MyUserData(i64, String);
 
-    impl UserData for MyUserData {}
+    impl UserData for MyUserData {
+        fn on_metatable_init(table: hv_alchemy::Type<Self>) {
+            table.add::<dyn erased_serde::Serialize>();
+        }
+    }
 
     let lua = Lua::new();
     lua.scope(|scope| {
-        let ud = scope.create_ser_userdata(MyUserData(-5, "test userdata".into()))?;
+        let ud = scope.create_userdata(MyUserData(-5, "test userdata".into()))?;
         assert_eq!(
             serde_json::to_value(&ud).unwrap(),
             serde_json::json!((-5, "test userdata"))
@@ -88,7 +96,7 @@ fn test_serialize_in_scope() -> LuaResult<()> {
     })?;
 
     lua.scope(|scope| {
-        let ud = scope.create_ser_userdata(MyUserData(-5, "test userdata".into()))?;
+        let ud = scope.create_userdata(MyUserData(-5, "test userdata".into()))?;
         lua.globals().set("ud", ud)
     })?;
     let val = lua.load("ud").eval::<Value>()?;
@@ -440,7 +448,7 @@ fn test_from_value_with_options() -> Result<(), Box<dyn std::error::Error>> {
     // Allow unsupported types
     let value = Value::Function(lua.create_function(|_, ()| Ok(()))?);
     let options = DeserializeOptions::new().deny_unsupported_types(false);
-    assert_eq!(lua.from_value_with::<()>(value, options)?, ());
+    lua.from_value_with::<()>(value, options)?;
 
     // Allow unsupported types (in a table seq)
     let value = lua.load(r#"{"a", "b", function() end, "c"}"#).eval()?;

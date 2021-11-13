@@ -8,12 +8,13 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [features]
-lua54 = ["mlua/lua54"]
-lua53 = ["mlua/lua53"]
-lua52 = ["mlua/lua52"]
-lua51 = ["mlua/lua51"]
-luajit = ["mlua/luajit"]
-vendored = ["mlua/vendored"]
+lua54 = ["hv/lua54"]
+lua53 = ["hv/lua53"]
+lua52 = ["hv/lua52"]
+lua51 = ["hv/lua51"]
+luajit = ["hv/luajit"]
+vendored = ["hv/vendored"]
 
 [dependencies]
-mlua = { path = "../..", features = ["module"] }
+# hv = { path = "../../../hv", features = ["module"] }
+hv = { path = "../../../..", package = "heavy" } 

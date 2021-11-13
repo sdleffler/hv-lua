@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::str;
 use std::sync::{Arc, Mutex};
 
-use mlua::{DebugEvent, Error, HookTriggers, Lua, Result, Value};
+use hv_lua::{DebugEvent, Error, HookTriggers, Lua, Result, Value};
 
 #[test]
 fn test_hook_triggers_bitor() {

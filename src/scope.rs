@@ -6,10 +6,6 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::rc::Rc;
 
-#[cfg(feature = "serialize")]
-use serde::Serialize;
-
-use crate::error::{Error, Result};
 use crate::ffi;
 use crate::function::Function;
 use crate::lua::Lua;
@@ -22,6 +18,10 @@ use crate::util::{
     take_userdata, StackGuard,
 };
 use crate::value::{FromLua, FromLuaMulti, MultiValue, ToLua, ToLuaMulti, Value};
+use crate::{
+    error::{Error, Result},
+    util::userdata_cell_destructor,
+};
 
 #[cfg(feature = "async")]
 use {
@@ -35,7 +35,7 @@ use {
 ///
 /// See [`Lua::scope`] for more details.
 ///
-/// [`Lua::scope`]: struct.Lua.html#method.scope
+/// [`Lua::scope`]: crate::Lua.html::scope
 pub struct Scope<'lua, 'scope> {
     lua: &'lua Lua,
     destructors: RefCell<Vec<(LuaRef<'lua>, DestructorCallback<'lua>)>>,
@@ -58,8 +58,8 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
     /// This is a version of [`Lua::create_function`] that creates a callback which expires on
     /// scope drop. See [`Lua::scope`] for more details.
     ///
-    /// [`Lua::create_function`]: struct.Lua.html#method.create_function
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
+    /// [`Lua::create_function`]: crate::Lua::create_function
+    /// [`Lua::scope`]: crate::Lua::scope
     pub fn create_function<'callback, A, R, F>(&'callback self, func: F) -> Result<Function<'lua>>
     where
         A: FromLuaMulti<'callback>,
@@ -87,8 +87,8 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
     /// This is a version of [`Lua::create_function_mut`] that creates a callback which expires
     /// on scope drop. See [`Lua::scope`] and [`Scope::create_function`] for more details.
     ///
-    /// [`Lua::create_function_mut`]: struct.Lua.html#method.create_function_mut
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
+    /// [`Lua::create_function_mut`]: crate::Lua::create_function_mut
+    /// [`Lua::scope`]: crate::Lua::scope
     /// [`Scope::create_function`]: #method.create_function
     pub fn create_function_mut<'callback, A, R, F>(
         &'callback self,
@@ -114,9 +114,9 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
     ///
     /// Requires `feature = "async"`
     ///
-    /// [`Lua::create_async_function`]: struct.Lua.html#method.create_async_function
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
-    /// [`Lua::async_scope`]: struct.Lua.html#method.async_scope
+    /// [`Lua::create_async_function`]: crate::Lua::create_async_function
+    /// [`Lua::scope`]: crate::Lua::scope
+    /// [`Lua::async_scope`]: crate::Lua::async_scope
     #[cfg(feature = "async")]
     #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
     pub fn create_async_function<'callback, A, R, F, FR>(
@@ -147,43 +147,23 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
     /// UserData be 'static).
     /// See [`Lua::scope`] for more details.
     ///
-    /// [`Lua::create_userdata`]: struct.Lua.html#method.create_userdata
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
+    /// [`Lua::create_userdata`]: crate::Lua::create_userdata
+    /// [`Lua::scope`]: crate::Lua::scope
     pub fn create_userdata<T>(&self, data: T) -> Result<AnyUserData<'lua>>
     where
         T: 'static + UserData,
     {
-        self.create_userdata_inner(UserDataCell::new(data))
+        self.create_userdata_inner::<T>(UserDataCell::new(data))
     }
 
-    /// Create a Lua userdata object from a custom serializable userdata type.
-    ///
-    /// This is a version of [`Lua::create_ser_userdata`] that creates a userdata which expires on
-    /// scope drop, and does not require that the userdata type be Send (but still requires that the
-    /// UserData be 'static).
-    /// See [`Lua::scope`] for more details.
-    ///
-    /// Requires `feature = "serialize"`
-    ///
-    /// [`Lua::create_ser_userdata`]: struct.Lua.html#method.create_ser_userdata
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
-    #[cfg(feature = "serialize")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "serialize")))]
-    pub fn create_ser_userdata<T>(&self, data: T) -> Result<AnyUserData<'lua>>
-    where
-        T: 'static + UserData + Serialize,
-    {
-        self.create_userdata_inner(UserDataCell::new_ser(data))
-    }
-
-    fn create_userdata_inner<T>(&self, data: UserDataCell<T>) -> Result<AnyUserData<'lua>>
+    fn create_userdata_inner<T>(&self, data: UserDataCell) -> Result<AnyUserData<'lua>>
     where
         T: 'static + UserData,
     {
         // Safe even though T may not be Send, because the parent Lua cannot be sent to another
         // thread while the Scope is alive (or the returned AnyUserData handle even).
         unsafe {
-            let ud = self.lua.make_userdata(data)?;
+            let ud = self.lua.make_userdata::<T>(data)?;
 
             #[cfg(any(feature = "lua51", feature = "luajit"))]
             let newtable = self.lua.create_table()?;
@@ -204,7 +184,7 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
                 ud.lua.push_ref(&newtable.0);
                 ffi::lua_setuservalue(state, -2);
 
-                vec![Box::new(take_userdata::<UserDataCell<T>>(state))]
+                vec![Box::new(userdata_cell_destructor(state))]
             });
             self.destructors
                 .borrow_mut()
@@ -234,9 +214,9 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
     /// creating the userdata metatable each time a new userdata is created.
     ///
     /// [`Scope::create_userdata`]: #method.create_userdata
-    /// [`Lua::create_userdata`]: struct.Lua.html#method.create_userdata
-    /// [`Lua::scope`]: struct.Lua.html#method.scope
-    /// [`UserDataMethods`]: trait.UserDataMethods.html
+    /// [`Lua::create_userdata`]: crate::Lua::create_userdata
+    /// [`Lua::scope`]:crate::Lua::scope
+    /// [`UserDataMethods`]: crate::UserDataMethods
     pub fn create_nonstatic_userdata<T>(&self, data: T) -> Result<AnyUserData<'lua>>
     where
         T: 'scope + UserData,
@@ -324,7 +304,7 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
             check_stack(lua.state, 13)?;
 
             let data_ptr = protect_lua!(lua.state, 0, 1, |state| {
-                ffi::lua_newuserdata(state, mem::size_of::<UserDataCell<Rc<RefCell<T>>>>())
+                ffi::lua_newuserdata(state, mem::size_of::<UserDataCell>())
             })?;
             // Prepare metatable, add meta methods first and then meta fields
             let meta_methods_nrec = ud_methods.meta_methods.len() + ud_fields.meta_fields.len() + 1;
@@ -378,7 +358,7 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
                 methods_index = Some(ffi::lua_absindex(lua.state, -1));
             }
 
-            init_userdata_metatable::<UserDataCell<Rc<RefCell<T>>>>(
+            init_userdata_metatable(
                 lua.state,
                 metatable_index,
                 field_getters_index,
@@ -393,7 +373,7 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
 
             let mt_ptr = ffi::lua_topointer(lua.state, -1);
             // Write userdata just before attaching metatable with `__gc` metamethod
-            ptr::write(data_ptr as _, UserDataCell::new(data));
+            ptr::write(data_ptr as _, UserDataCell::new_nonstatic(data));
             ffi::lua_setmetatable(lua.state, -2);
             let ud = AnyUserData(lua.pop_ref());
             lua.register_userdata_metatable(mt_ptr, None);
@@ -429,7 +409,9 @@ impl<'lua, 'scope> Scope<'lua, 'scope> {
                     mem::transmute(f)
                 }
 
-                let ud = Box::new(seal(take_userdata::<UserDataCell<Rc<RefCell<T>>>>(state)));
+                let ud = Box::new(seal(
+                    take_userdata::<UserDataCell>(state).into_inner::<Rc<RefCell<T>>>(),
+                ));
                 vec![ud]
             });
             self.destructors

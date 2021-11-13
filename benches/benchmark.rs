@@ -3,7 +3,7 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::task;
 
-use mlua::prelude::*;
+use hv_lua::prelude::*;
 
 fn collect_gc_twice(lua: &Lua) {
     lua.gc_collect().unwrap();

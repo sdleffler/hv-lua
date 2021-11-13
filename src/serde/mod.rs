@@ -23,7 +23,7 @@ pub trait LuaSerdeExt<'lua> {
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use mlua::{Lua, Result, LuaSerdeExt};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt};
     ///
     /// fn main() -> Result<()> {
     ///     let lua = Lua::new();
@@ -47,7 +47,7 @@ pub trait LuaSerdeExt<'lua> {
     /// # Example
     ///
     /// ```
-    /// use mlua::{Lua, Result, LuaSerdeExt};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt};
     /// use serde_json::Value as JsonValue;
     ///
     /// fn main() -> Result<()> {
@@ -69,16 +69,16 @@ pub trait LuaSerdeExt<'lua> {
     /// ```
     fn array_metatable(&'lua self) -> Table<'lua>;
 
-    /// Converts `T` into a `Value` instance.
+    /// Converts `T` into a [`Value`] instance.
     ///
     /// Requires `feature = "serialize"`
     ///
-    /// [`Value`]: enum.Value.html
+    /// [`Value`]: crate::Value
     ///
     /// # Example
     ///
     /// ```
-    /// use mlua::{Lua, Result, LuaSerdeExt};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt};
     /// use serde::Serialize;
     ///
     /// #[derive(Serialize)]
@@ -102,16 +102,16 @@ pub trait LuaSerdeExt<'lua> {
     /// ```
     fn to_value<T: Serialize + ?Sized>(&'lua self, t: &T) -> Result<Value<'lua>>;
 
-    /// Converts `T` into a `Value` instance with options.
+    /// Converts `T` into a [`Value`] instance with options.
     ///
     /// Requires `feature = "serialize"`
     ///
-    /// [`Value`]: enum.Value.html
+    /// [`Value`]: crate::Value
     ///
     /// # Example
     ///
     /// ```
-    /// use mlua::{Lua, Result, LuaSerdeExt, SerializeOptions};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt, SerializeOptions};
     ///
     /// fn main() -> Result<()> {
     ///     let lua = Lua::new();
@@ -129,16 +129,16 @@ pub trait LuaSerdeExt<'lua> {
     where
         T: Serialize + ?Sized;
 
-    /// Deserializes a `Value` into any serde deserializable object.
+    /// Deserializes a [`Value`] into any serde deserializable object.
     ///
     /// Requires `feature = "serialize"`
     ///
-    /// [`Value`]: enum.Value.html
+    /// [`Value`]: crate::Value
     ///
     /// # Example
     ///
     /// ```
-    /// use mlua::{Lua, Result, LuaSerdeExt};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt};
     /// use serde::Deserialize;
     ///
     /// #[derive(Deserialize, Debug, PartialEq)]
@@ -159,16 +159,16 @@ pub trait LuaSerdeExt<'lua> {
     /// ```
     fn from_value<T: Deserialize<'lua>>(&'lua self, value: Value<'lua>) -> Result<T>;
 
-    /// Deserializes a `Value` into any serde deserializable object with options.
+    /// Deserializes a [`Value`] into any serde deserializable object with options.
     ///
     /// Requires `feature = "serialize"`
     ///
-    /// [`Value`]: enum.Value.html
+    /// [`Value`]: crate::Value
     ///
     /// # Example
     ///
     /// ```
-    /// use mlua::{Lua, Result, LuaSerdeExt, DeserializeOptions};
+    /// use hv_lua::{Lua, Result, LuaSerdeExt, DeserializeOptions};
     /// use serde::Deserialize;
     ///
     /// #[derive(Deserialize, Debug, PartialEq)]

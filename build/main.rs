@@ -143,16 +143,18 @@ fn generate_glue() -> Result<()> {
         (version.0 * 100) + version.1
     )?;
 
-    let max_stack = if pointer_bit_width >= 32 {
-        1_000_000
-    } else {
-        15_000
-    };
+    #[cfg(any(feature = "lua54", feature = "lua53", feature = "lua52"))]
     writeln!(
         glue,
         "pub const LUA_REGISTRYINDEX: c_int = -{} - 1000;",
-        max_stack
+        if pointer_bit_width >= 32 {
+            1_000_000
+        } else {
+            15_000
+        }
     )?;
+    #[cfg(any(feature = "lua51", feature = "luajit"))]
+    writeln!(glue, "pub const LUA_REGISTRYINDEX: c_int = -10000;")?;
 
     // These two are only defined in lua 5.1
     writeln!(glue, "pub const LUA_ENVIRONINDEX: c_int = -10001;")?;
@@ -227,8 +229,8 @@ fn main() {
     // We don't support "vendored module" mode on windows
     #[cfg(all(feature = "vendored", feature = "module", target_os = "windows"))]
     compile_error!(
-        "Vendored (static) builds are not supported for modules on Windows.\n"
-            + "Please, use `pkg-config` or custom mode to link to a Lua dll."
+        "Vendored (static) builds are not supported for modules on Windows.\n \
+            Please, use `pkg-config` or custom mode to link to a Lua dll."
     );
 
     let include_dir = find::probe_lua();

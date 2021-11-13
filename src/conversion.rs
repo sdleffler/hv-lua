@@ -19,6 +19,8 @@ use crate::types::{LightUserData, MaybeSend};
 use crate::userdata::{AnyUserData, UserData};
 use crate::value::{FromLua, Nil, ToLua, Value};
 
+pub mod from_table;
+
 impl<'lua> ToLua<'lua> for Value<'lua> {
     #[inline]
     fn to_lua(self, _: &'lua Lua) -> Result<Value<'lua>> {
@@ -144,11 +146,11 @@ impl<'lua, T: 'static + MaybeSend + UserData> ToLua<'lua> for T {
     }
 }
 
-impl<'lua, T: 'static + UserData + Clone> FromLua<'lua> for T {
+impl<'lua, T: 'static + UserData> FromLua<'lua> for T {
     #[inline]
     fn from_lua(value: Value<'lua>, _: &'lua Lua) -> Result<T> {
         match value {
-            Value::UserData(ud) => Ok(ud.borrow::<T>()?.clone()),
+            Value::UserData(ud) => Ok(ud.clone_or_take::<T>()?),
             _ => Err(Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "userdata",
@@ -473,6 +475,25 @@ macro_rules! lua_convert_array {
                     ))
                 }
             }
+
+            impl<'lua, T> FromLua<'lua> for [T; $N] where T: FromLua<'lua> {
+                fn from_lua(value: Value<'lua>, _lua: &'lua Lua) -> Result<Self> {
+                    if let Value::Table(table) = value {
+                        let vec = table.sequence_values().collect::<Result<Vec<T>>>()?;
+                        Self::try_from(vec).map_err(|_| Error::FromLuaConversionError {
+                            from: "table",
+                            to: concat!("array of length ", $N),
+                            message: Some(format!("expected table of length {}", $N)),
+                        })
+                    } else {
+                        Err(Error::FromLuaConversionError {
+                            from: value.type_name(),
+                            to: concat!("array of length ", $N),
+                            message: Some(format!("expected table of length {}", $N)),
+                        })
+                    }
+                }
+            }
         )+
     }
 }
@@ -498,26 +519,6 @@ impl<'lua, T: FromLua<'lua>> FromLua<'lua> for Box<[T]> {
             Err(Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "Box<[T]>",
-                message: Some("expected table".to_string()),
-            })
-        }
-    }
-}
-
-impl<'lua, T: ToLua<'lua>> ToLua<'lua> for Vec<T> {
-    fn to_lua(self, lua: &'lua Lua) -> Result<Value<'lua>> {
-        Ok(Value::Table(lua.create_sequence_from(self)?))
-    }
-}
-
-impl<'lua, T: FromLua<'lua>> FromLua<'lua> for Vec<T> {
-    fn from_lua(value: Value<'lua>, _: &'lua Lua) -> Result<Self> {
-        if let Value::Table(table) = value {
-            table.sequence_values().collect()
-        } else {
-            Err(Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "Vec",
                 message: Some("expected table".to_string()),
             })
         }

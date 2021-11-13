@@ -6,9 +6,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::{error, f32, f64, fmt};
 
-use mlua::{
-    ChunkMode, Error, ExternalError, Function, Lua, LuaOptions, Nil, Result, StdLib, String, Table,
-    UserData, Value, Variadic,
+use hv::lua::{
+    from_table::Sequence, ChunkMode, Error, ExternalError, Function, Lua, LuaOptions, Nil, Result,
+    StdLib, String, Table, UserData, Value, Variadic,
 };
 
 #[test]
@@ -134,7 +134,7 @@ fn test_eval() -> Result<()> {
     let lua = Lua::new();
 
     assert_eq!(lua.load("1 + 1").eval::<i32>()?, 2);
-    assert_eq!(lua.load("false == false").eval::<bool>()?, true);
+    assert!(lua.load("false == false").eval::<bool>()?);
     assert_eq!(lua.load("return 1 + 2").eval::<i32>()?, 3);
     match lua.load("if true then").eval::<()>() {
         Err(Error::SyntaxError {
@@ -426,7 +426,7 @@ fn test_panic() -> Result<()> {
     // Test returning Rust panic (must be resumed)
     {
         let lua = make_lua(LuaOptions::default())?;
-        match catch_unwind(AssertUnwindSafe(|| -> Result<()> {
+        let thunk = || -> Result<()> {
             let _catched_panic = lua
                 .load(
                     r#"
@@ -437,10 +437,10 @@ fn test_panic() -> Result<()> {
                 )
                 .eval::<Value>()?;
             Ok(())
-        })) {
-            Ok(_) => panic!("no panic was detected"),
-            Err(_) => {}
         };
+        if catch_unwind(AssertUnwindSafe(thunk)).is_ok() {
+            panic!("no panic was detected")
+        }
 
         assert!(lua.globals().get::<_, Value>("err")? == Value::Nil);
         match lua.load("tostring(err)").exec() {
@@ -653,10 +653,10 @@ fn test_pcall_xpcall() -> Result<()> {
     )
     .exec()?;
 
-    assert_eq!(globals.get::<_, bool>("pcall_status")?, false);
+    assert!(!globals.get::<_, bool>("pcall_status")?);
     assert_eq!(globals.get::<_, String>("pcall_error")?, "testerror");
 
-    assert_eq!(globals.get::<_, bool>("xpcall_statusr")?, false);
+    assert!(!globals.get::<_, bool>("xpcall_statusr")?);
     #[cfg(any(
         feature = "lua54",
         feature = "lua53",
@@ -870,7 +870,7 @@ fn test_recursion() -> Result<()> {
 fn test_too_many_returns() -> Result<()> {
     let lua = Lua::new();
     let f = lua.create_function(|_, ()| Ok(Variadic::from_iter(1..1000000)))?;
-    assert!(f.call::<_, Vec<u32>>(()).is_err());
+    assert!(f.call::<_, Sequence<u32>>(()).is_err());
     Ok(())
 }
 

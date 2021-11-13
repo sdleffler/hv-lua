@@ -1,4 +1,4 @@
-use mlua::{chunk, ExternalResult, Lua, LuaSerdeExt, Result};
+use hv::lua::{chunk, ExternalResult, Lua, LuaSerdeExt, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
