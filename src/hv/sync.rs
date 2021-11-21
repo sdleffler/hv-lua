@@ -83,7 +83,7 @@ where
 impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Elastic<StretchedMut<T>> {
     fn on_metatable_init(table: Type<Self>) {
         #[cfg(feature = "send")]
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
