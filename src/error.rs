@@ -140,6 +140,38 @@ pub enum Error {
     /// [`AnyUserData`]: crate::AnyUserData
     /// [`UserData`]: crate::UserData
     UserDataBorrowMutError,
+    /// An [`AnyUserData`] immutable borrow failed because its proxy type is already borrowed
+    /// mutably.
+    ///
+    /// A borrow "proxy" is something like `Arc<RwLock<T>>`, where there's an internal
+    /// lock/borrow-checked mechanism like `RefCell` or `Mutex` or similar. Many of these types
+    /// delegate to an underlying type which implements [`UserData`]; this error is returned when
+    /// rather than the userdata itself already being borrowed for some reason, the proxy type
+    /// (which might be shared outside of Lua) is unable to be borrowed (which might happen
+    /// unprovoked by Lua.)
+    ///
+    /// This error can occur when a method on a [`UserData`] type calls back into Lua, which then
+    /// tries to call a method on the same [`UserData`] type. Consider restructuring your API to
+    /// prevent these errors.
+    ///
+    /// [`AnyUserData`]: crate::AnyUserData [`UserData`]: crate::UserData
+    UserDataProxyBorrowError,
+    /// An [`AnyUserData`] mutable borrow failed because its proxy type is already borrowed.
+    ///
+    /// A borrow "proxy" is something like `Arc<RwLock<T>>`, where there's an internal
+    /// lock/borrow-checked mechanism like `RefCell` or `Mutex` or similar. Many of these types
+    /// delegate to an underlying type which implements [`UserData`]; this error is returned when
+    /// rather than the userdata itself already being borrowed for some reason, the proxy type
+    /// (which might be shared outside of Lua) is unable to be borrowed (which might happen
+    /// unprovoked by Lua.)
+    ///
+    /// This error can occur when a method on a [`UserData`] type calls back into Lua, which then
+    /// tries to call a method on the same [`UserData`] type. Consider restructuring your API to
+    /// prevent these errors.
+    ///
+    /// [`AnyUserData`]: crate::AnyUserData
+    /// [`UserData`]: crate::UserData
+    UserDataProxyBorrowMutError,
     /// A [`MetaMethod`] operation is restricted (typically for `__gc` or `__metatable`).
     ///
     /// [`MetaMethod`]: crate::MetaMethod
@@ -244,6 +276,8 @@ impl fmt::Display for Error {
             Error::UserDataDestructed => write!(fmt, "userdata has been destructed"),
             Error::UserDataBorrowError => write!(fmt, "userdata already mutably borrowed"),
             Error::UserDataBorrowMutError => write!(fmt, "userdata already borrowed"),
+            Error::UserDataProxyBorrowError => write!(fmt, "could not immutably borrow userdata proxy"),
+            Error::UserDataProxyBorrowMutError => write!(fmt, "could not mutably borrow userdata proxy"),
             Error::MetaMethodRestricted(ref method) => write!(fmt, "metamethod {} is restricted", method),
             Error::MetaMethodTypeError { ref method, type_name, ref message } => {
                 write!(fmt, "metamethod {} has unsupported type {}", method, type_name)?;

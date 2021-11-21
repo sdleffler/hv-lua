@@ -1522,7 +1522,7 @@ where
         self.inner.add_method(name, move |lua, this, args| {
             let guard = this
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard, args)
         });
     }
@@ -1537,7 +1537,7 @@ where
         self.inner.add_method_mut(name, move |lua, this, args| {
             let mut guard = this
                 .try_nonblocking_guarded_mut_borrow_mut()
-                .map_err(|_| Error::UserDataBorrowMutError)?;
+                .map_err(|_| Error::UserDataProxyBorrowMutError)?;
             method(lua, &mut *guard, args)
         });
     }
@@ -1572,7 +1572,7 @@ where
         self.inner.add_meta_method(meta, move |lua, this, args| {
             let guard = this
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard, args)
         });
     }
@@ -1588,7 +1588,7 @@ where
             .add_meta_method_mut(meta, move |lua, this, args| {
                 let mut guard = this
                     .try_nonblocking_guarded_mut_borrow_mut()
-                    .map_err(|_| Error::UserDataBorrowMutError)?;
+                    .map_err(|_| Error::UserDataProxyBorrowMutError)?;
                 method(lua, &mut *guard, args)
             });
     }
@@ -1634,7 +1634,7 @@ where
         self.inner.add_async_method(name, move |lua, this, args| {
             let guard = this
                 .try_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, (*guard).clone(), args)
         });
     }
@@ -1674,7 +1674,7 @@ where
         self.inner.add_method(name, move |lua, this, args| {
             let guard = this
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard, args)
         });
     }
@@ -1686,8 +1686,9 @@ where
         R: ToLuaMulti<'lua>,
         M: 'static + MaybeSend + FnMut(&'lua Lua, &mut U, A) -> Result<R>,
     {
-        self.inner
-            .add_method_mut(name, |_, _, ()| Err::<(), _>(Error::UserDataBorrowMutError));
+        self.inner.add_method_mut(name, |_, _, ()| {
+            Err::<(), _>(Error::UserDataProxyBorrowMutError)
+        });
     }
 
     fn add_function<S, A, R, F>(&mut self, name: &S, function: F)
@@ -1720,7 +1721,7 @@ where
         self.inner.add_meta_method(meta, move |lua, this, args| {
             let guard = this
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard, args)
         });
     }
@@ -1732,8 +1733,9 @@ where
         R: ToLuaMulti<'lua>,
         M: 'static + MaybeSend + FnMut(&'lua Lua, &mut U, A) -> Result<R>,
     {
-        self.inner
-            .add_meta_method_mut(meta, |_, _, ()| Err::<(), _>(Error::UserDataBorrowMutError));
+        self.inner.add_meta_method_mut(meta, |_, _, ()| {
+            Err::<(), _>(Error::UserDataProxyBorrowMutError)
+        });
     }
 
     fn add_meta_function<S, A, R, F>(&mut self, meta: S, function: F)
@@ -1777,7 +1779,7 @@ where
         self.inner.add_async_method(name, move |lua, this, args| {
             let guard = this
                 .try_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, (*guard).clone(), args)
         });
     }
@@ -1857,7 +1859,7 @@ where
         self.inner.add_field_method_get(name, move |lua, u| {
             let guard = u
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard)
         });
     }
@@ -1871,7 +1873,7 @@ where
         self.inner.add_field_method_set(name, move |lua, u, arg| {
             let mut guard = u
                 .try_nonblocking_guarded_mut_borrow_mut()
-                .map_err(|_| Error::UserDataBorrowMutError)?;
+                .map_err(|_| Error::UserDataProxyBorrowMutError)?;
             method(lua, &mut *guard, arg)
         });
     }
@@ -1928,7 +1930,7 @@ where
         self.inner.add_field_method_get(name, move |lua, u| {
             let guard = u
                 .try_nonblocking_guarded_borrow()
-                .map_err(|_| Error::UserDataBorrowError)?;
+                .map_err(|_| Error::UserDataProxyBorrowError)?;
             method(lua, &*guard)
         });
     }
@@ -1940,7 +1942,7 @@ where
         M: 'static + MaybeSend + FnMut(&'lua Lua, &mut U, A) -> Result<()>,
     {
         self.inner.add_field_method_set(name, |_, _, _: A| {
-            Err::<(), _>(Error::UserDataBorrowMutError)
+            Err::<(), _>(Error::UserDataProxyBorrowMutError)
         });
     }
 
