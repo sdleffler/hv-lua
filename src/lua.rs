@@ -1306,6 +1306,17 @@ impl Lua {
         }
     }
 
+    /// Returns a handle to the environment table of the active thread.
+    pub fn current_environment(&self) -> Table {
+        unsafe {
+            let _sg = StackGuard::new(self.state);
+            assert_stack(self.state, 2);
+            ffi::lua_pushthread(self.state);
+            ffi::lua_getfenv(self.state, -1);
+            Table(self.pop_ref())
+        }
+    }
+
     /// Returns a handle to the active `Thread`. For calls to `Lua` this will be the main Lua thread,
     /// for parameters given to a callback, this will be whatever Lua thread called the callback.
     pub fn current_thread(&self) -> Thread {

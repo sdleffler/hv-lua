@@ -19,9 +19,7 @@ use {
     std::result::Result as StdResult,
 };
 
-use hv_alchemy::{
-    AlchemicalAny, AlchemicalAnyExt, AlchemicalPtr, Alchemy, IntoProxy, Type, TypeTable,
-};
+use hv_alchemy::{AlchemicalAny, AlchemicalPtr, Alchemy, IntoProxy, Type, TypeTable};
 use hv_guarded_borrow::{NonBlockingGuardedBorrow, NonBlockingGuardedMutBorrowMut};
 
 use crate::types::{Callback, LuaRef, MaybeSend};
@@ -955,13 +953,14 @@ impl<'lua> AnyUserData<'lua> {
             let _sg = StackGuard::new(lua.state);
             check_stack(lua.state, 2)?;
 
-            let type_id = lua.push_userdata_ref(&self.0)?.map(|tinfo| tinfo.id);
-            match type_id {
-                Some(type_id) if type_id == TypeId::of::<T>() => {
+            let tinfo = lua.push_userdata_ref(&self.0)?;
+            match tinfo {
+                Some(tinfo) if tinfo.id == TypeId::of::<T>() => {
                     // Try to borrow userdata exclusively. At the same time, try cloning it.
-                    let maybe_cloned = (*(*get_userdata::<UserDataCell>(lua.state, -1))
-                        .try_dyn_borrow_mut::<dyn AlchemicalAny>()?)
-                    .try_clone();
+                    let userdata_cell = get_userdata::<UserDataCell>(lua.state, -1);
+                    let dyn_borrowed =
+                        (*userdata_cell).try_dyn_borrow_mut::<dyn AlchemicalAny>()?;
+                    let maybe_cloned = (*dyn_borrowed).try_clone();
 
                     if let Some(cloned) = maybe_cloned {
                         Ok(*cloned.downcast::<T>().unwrap())

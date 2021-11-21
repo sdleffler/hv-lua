@@ -17,7 +17,7 @@ impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Arc<AtomicRefCe
         table.add_clone();
 
         #[cfg(feature = "send")]
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
@@ -30,6 +30,13 @@ impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Arc<AtomicRefCe
 }
 
 impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for ArcCell<T> {
+    fn on_metatable_init(table: Type<Self>) {
+        table.add_clone();
+
+        #[cfg(feature = "send")]
+        table.add_send().add_sync();
+    }
+
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method("borrow", |_lua, this, ()| Ok(this.borrow()));
         methods.add_method("borrow_mut", |_lua, this, ()| Ok(this.borrow_mut()));
@@ -49,7 +56,7 @@ where
         table.add_clone();
 
         #[cfg(feature = "send")]
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
@@ -68,7 +75,7 @@ where
 {
     fn on_metatable_init(table: Type<Self>) {
         #[cfg(feature = "send")]
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
@@ -82,6 +89,8 @@ where
 
 impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Elastic<StretchedMut<T>> {
     fn on_metatable_init(table: Type<Self>) {
+        table.add_clone();
+
         #[cfg(feature = "send")]
         table.add_send().add_sync();
     }
@@ -97,8 +106,10 @@ impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Elastic<Stretch
 
 impl<T: 'static + UserData + MaybeSend + MaybeSync> UserData for Elastic<StretchedRef<T>> {
     fn on_metatable_init(table: Type<Self>) {
+        table.add_clone();
+
         #[cfg(feature = "send")]
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
