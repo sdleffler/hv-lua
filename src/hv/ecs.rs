@@ -94,8 +94,8 @@ impl UserData for ecs::ColumnBatch {}
 impl<T: 'static + UserData> UserData for Elastic<StretchedBatchWriter<T>> {
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method_mut("push", |_, this, ud: AnyUserData| {
-            this.borrow_mut()
-                .ok_or_else(|| Error::external("BatchWriter already destructed!"))?
+            this.try_borrow_as_parameterized_mut()
+                .map_err(|_| Error::external("BatchWriter already destructed!"))?
                 .push(ud.clone_or_take::<T>()?)
                 .ok()
                 .ok_or_else(|| Error::external("BatchWriter is full!"))?;
@@ -104,8 +104,8 @@ impl<T: 'static + UserData> UserData for Elastic<StretchedBatchWriter<T>> {
 
         methods.add_method("fill", |_, this, ()| {
             Ok(this
-                .borrow()
-                .ok_or_else(|| Error::external("BatchWriter already destructed!"))?
+                .try_borrow_as_parameterized()
+                .map_err(|_| Error::external("BatchWriter already destructed!"))?
                 .fill())
         });
     }
