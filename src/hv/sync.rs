@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
 use hv_alchemy::Type;
-use hv_sync::{
-    cell::{ArcCell, ArcRef, ArcRefMut, AtomicRefCell},
-    elastic::{Elastic, StretchedMut, StretchedRef},
-};
+use hv_cell::{ArcCell, ArcRef, ArcRefMut, AtomicRefCell};
+use hv_elastic::{Elastic, StretchedMut, StretchedRef};
 
 use crate::{
     types::{MaybeSend, MaybeSync},
