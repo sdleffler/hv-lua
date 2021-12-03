@@ -36,7 +36,7 @@ impl<T: 'static + UserData> LuaUserDataTypeExt<T> for Type<T> {
     where
         T: hv_ecs::Component,
     {
-        self.add::<dyn Send>().add::<dyn Sync>()
+        self.add_send().add_sync()
     }
 
     fn mark_bundle(self) -> Self

@@ -38,8 +38,8 @@ impl<T: 'static + UserData + MaybeSend> UserData for Type<T> {
     fn on_metatable_init(t: Type<Self>) {
         t.add_clone()
             .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>()
+            .add_send()
+            .add_sync()
             .add::<dyn MetaType>();
         T::on_type_metatable_init(hv_alchemy::of())
     }

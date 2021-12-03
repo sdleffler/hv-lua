@@ -23,14 +23,10 @@ macro_rules! get_set_coords {
 
 impl<T: LuaRealField> UserData for Vector2<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table
-            .add_clone()
-            .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>();
+        table.add_clone().add_copy().add_send().add_sync();
     }
 
-    fn add_fields<'lua, F: crate::UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
         get_set_coords!(fields, x, y);
     }
 
@@ -79,12 +75,12 @@ impl<T: LuaRealField> UserData for Vector3<T> {
         table
             .add_clone()
             .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>()
+            .add_send()
+            .add_sync()
             .add_conversion_from::<Vector3<T>>();
     }
 
-    fn add_fields<'lua, F: crate::UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
         get_set_coords!(fields, x, y, z);
     }
 
@@ -128,43 +124,33 @@ impl<T: LuaRealField> UserData for Vector3<T> {
     }
 }
 
-impl<T: LuaRealField> UserData for Point2<T> {
-    fn on_metatable_init(table: Type<Self>) {
-        table
-            .add_clone()
-            .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>()
-            .add_conversion_from::<Vector2<T>>();
-    }
-
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
-        get_set_coords!(fields, x, y);
+impl<'lua, T: LuaRealField> FromLua<'lua> for Point2<T> {
+    fn from_lua(lua_value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
+        Vector2::from_lua(lua_value, lua).map(Point2::from)
     }
 }
 
-impl<T: LuaRealField> UserData for Point3<T> {
-    fn on_metatable_init(table: Type<Self>) {
-        table
-            .add_clone()
-            .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>()
-            .add_conversion_from::<Vector3<T>>();
+impl<'lua, T: LuaRealField> ToLua<'lua> for Point2<T> {
+    fn to_lua(self, lua: &'lua Lua) -> Result<Value<'lua>> {
+        Vector2::to_lua(self.coords, lua)
     }
+}
 
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
-        get_set_coords!(fields, x, y, z);
+impl<'lua, T: LuaRealField> FromLua<'lua> for Point3<T> {
+    fn from_lua(lua_value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
+        Vector3::from_lua(lua_value, lua).map(Point3::from)
+    }
+}
+
+impl<'lua, T: LuaRealField> ToLua<'lua> for Point3<T> {
+    fn to_lua(self, lua: &'lua Lua) -> Result<Value<'lua>> {
+        Vector3::to_lua(self.coords, lua)
     }
 }
 
 impl<T: LuaRealField> UserData for Isometry2<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table
-            .add_clone()
-            .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>();
+        table.add_clone().add_copy().add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(_methods: &mut M) {}
@@ -183,11 +169,7 @@ impl<T: LuaRealField> UserData for Isometry2<T> {
 
 impl<T: LuaRealField> UserData for Isometry3<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table
-            .add_clone()
-            .add_copy()
-            .add::<dyn Send>()
-            .add::<dyn Sync>();
+        table.add_clone().add_copy().add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(_methods: &mut M) {}
@@ -257,9 +239,6 @@ pub fn table(lua: &Lua) -> Result<Table> {
     let es = types! {lua,
         Vector2(f32, f64),
         Vector3(f32, f64),
-
-        Point2(f32, f64),
-        Point3(f32, f64),
 
         Isometry2(f32, f64),
         Isometry3(f32, f64),

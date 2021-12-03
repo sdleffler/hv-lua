@@ -48,7 +48,7 @@ impl<'lua> FromLua<'lua> for ecs::EntityBuilder {
 
 impl UserData for ecs::ColumnBatchType {
     fn on_metatable_init(table: Type<Self>) {
-        table.add_clone().add::<dyn Send>().add::<dyn Sync>();
+        table.add_clone().add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
@@ -384,7 +384,7 @@ impl UserData for ecs::DynamicItem {
 
 impl<T: 'static + UserData + Send + Sync> UserData for ecs::DynamicComponent<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table.add::<dyn Send>().add::<dyn Sync>();
+        table.add_send().add_sync();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
