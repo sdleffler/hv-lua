@@ -351,6 +351,10 @@ impl<T: ecs::Component + UserData> ComponentType for Type<T> {
 }
 
 impl UserData for ecs::DynamicQuery {
+    fn on_metatable_init(table: Type<Self>) {
+        table.add_clone().add_send().add_sync();
+    }
+
     fn add_type_methods<'lua, M: UserDataMethods<'lua, Type<Self>>>(methods: &mut M) {
         methods.add_function("new", move |_, table: Table| {
             let mut free_elements = Vec::new();
