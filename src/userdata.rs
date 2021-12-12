@@ -10,6 +10,9 @@ use std::{
 };
 use std::{string::String as StdString, sync::Mutex};
 
+#[cfg(not(feature = "send"))]
+use std::rc::Rc;
+
 #[cfg(feature = "async")]
 use std::future::Future;
 
@@ -2010,7 +2013,11 @@ where
 }
 
 #[cfg(not(feature = "send"))]
-impl<T: UserData> UserData for Rc<RefCell<T>> {
+impl<T: 'static + UserData> UserData for Rc<RefCell<T>> {
+    fn on_metatable_init(table: Type<Self>) {
+        table.add_clone();
+    }
+
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         T::add_methods(&mut UserDataMethodsProxy::new(methods));
     }

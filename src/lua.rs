@@ -41,9 +41,6 @@ use crate::util::push_userdata;
 #[cfg(feature = "lua54")]
 use crate::{userdata::USER_VALUE_MAXSLOT, util::push_userdata_uv};
 
-#[cfg(not(feature = "send"))]
-use std::rc::Rc;
-
 #[cfg(feature = "async")]
 use {
     crate::types::{AsyncCallback, AsyncCallbackUpvalue, AsyncPollUpvalue},
