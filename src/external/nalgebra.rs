@@ -1,9 +1,9 @@
 use hv_alchemy::Type;
+use hv_math::Normed;
 use nalgebra::{Isometry2, Isometry3, Point2, Point3, RealField, Unit, Vector2, Vector3};
-use parry3d::simba::scalar::SubsetOf;
 
 use crate::{
-    AnyUserData, Error, FromLua, Lua, MetaMethod, Result, Table, ToLua, UserData, UserDataFields,
+    AnyUserData, FromLua, Lua, MetaMethod, Result, Table, ToLua, UserData, UserDataFields,
     UserDataMethods, Value,
 };
 
@@ -67,6 +67,9 @@ impl<T: LuaRealField> UserData for Vector2<T> {
         Self: 'static,
     {
         methods.add_function("new", |_, (x, y): (T, T)| Ok(Self::new(x, y)));
+        methods.add_function("zeros", |_, ()| Ok(Self::zeros()));
+        methods.add_function("x_axis", |_, ()| Ok(Self::x()));
+        methods.add_function("y_axis", |_, ()| Ok(Self::y()));
     }
 }
 
@@ -121,6 +124,10 @@ impl<T: LuaRealField> UserData for Vector3<T> {
         Self: 'static,
     {
         methods.add_function("new", |_, (x, y, z): (T, T, T)| Ok(Self::new(x, y, z)));
+        methods.add_function("zeros", |_, ()| Ok(Self::zeros()));
+        methods.add_function("x_axis", |_, ()| Ok(Self::x()));
+        methods.add_function("y_axis", |_, ()| Ok(Self::y()));
+        methods.add_function("z_axis", |_, ()| Ok(Self::z()));
     }
 }
 
@@ -198,16 +205,10 @@ impl<'lua, T: ToLua<'lua>> ToLua<'lua> for Unit<T> {
 
 impl<'lua, T: FromLua<'lua>> FromLua<'lua> for Unit<T>
 where
-    Unit<T>: SubsetOf<T>,
+    T: Normed,
 {
     fn from_lua(lua_value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
-        nalgebra::try_convert(T::from_lua(lua_value, lua)?).ok_or_else(|| {
-            Error::FromLuaConversionError {
-                from: std::any::type_name::<T>(),
-                to: std::any::type_name::<Self>(),
-                message: Some("value is not normalized!".to_owned()),
-            }
-        })
+        Ok(Unit::new_normalize(T::from_lua(lua_value, lua)?))
     }
 }
 

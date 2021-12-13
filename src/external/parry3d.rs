@@ -5,7 +5,7 @@ use hv_math::{Isometry3, Point3};
 use parry3d::{
     math::Real,
     query::Contact,
-    shape::{Ball, Capsule, Compound, ConvexPolyhedron, Cuboid, Shape, SharedShape},
+    shape::{Ball, Capsule, Compound, ConvexPolyhedron, Cuboid, HalfSpace, Shape, SharedShape},
 };
 
 use crate::{
@@ -119,6 +119,20 @@ impl UserData for Cuboid {
     }
 }
 
+impl UserData for HalfSpace {
+    fn on_metatable_init(table: Type<Self>) {
+        table.add_clone().mark_component().mark_shape();
+    }
+
+    fn on_type_metatable_init(table: Type<Type<Self>>) {
+        table.mark_component_type();
+    }
+
+    fn add_type_methods<'lua, M: UserDataMethods<'lua, Type<Self>>>(methods: &mut M) {
+        methods.add_function("new", |_, outwards_normal| Ok(Self::new(outwards_normal)));
+    }
+}
+
 impl UserData for SharedShape {
     fn on_metatable_init(table: Type<Self>) {
         table.add_clone().mark_component();
@@ -154,6 +168,9 @@ impl UserData for SharedShape {
             },
         );
         methods.add_function("cuboid", |_, (hx, hy, hz)| Ok(Self::cuboid(hx, hy, hz)));
+        methods.add_function("halfspace", |_, outward_normal| {
+            Ok(Self::halfspace(outward_normal))
+        });
     }
 }
 
@@ -319,6 +336,7 @@ pub fn table(lua: &Lua) -> Result<Table> {
         ("Compound", lua.create_userdata_type::<Compound>()?),
         ("ConvexPolyhedron", lua.create_userdata_type::<ConvexPolyhedron>()?),
         ("Cuboid", lua.create_userdata_type::<Cuboid>()?),
+        ("HalfSpace", lua.create_userdata_type::<HalfSpace>()?),
         ("SharedShape", lua.create_userdata_type::<SharedShape>()?),
     ];
 

@@ -196,7 +196,9 @@ impl<'a> LuaSingleBundle<'a> {
                 data = std::alloc::alloc(type_table.layout);
                 drop(borrowed);
                 let mut borrowed_mut = ud.dyn_borrow_mut::<dyn AlchemicalAny>()?;
-                if hv_alchemy::clone_or_move(&mut *borrowed_mut, data as *mut _) {
+                let moved = hv_alchemy::clone_or_move(&mut *borrowed_mut, data as *mut _);
+                drop(borrowed_mut);
+                if moved {
                     std::alloc::dealloc(
                         Box::into_raw(ud.dyn_take::<dyn AlchemicalAny>().unwrap()) as *mut u8,
                         type_table.layout,
@@ -240,7 +242,7 @@ unsafe impl ecs::DynamicBundle for LuaSingleBundle<'_> {
     }
 
     unsafe fn put(mut self, mut f: impl FnMut(*mut u8, ecs::TypeInfo)) {
-        f(self.data as *mut u8, self.info);
+        f(self.data, self.info);
         self.moved = true;
         drop(self);
     }
@@ -248,6 +250,13 @@ unsafe impl ecs::DynamicBundle for LuaSingleBundle<'_> {
 
 impl Drop for LuaSingleBundle<'_> {
     fn drop(&mut self) {
+        // println!(
+        //     "bundle drop: {:?} (borrowed: {}, moved: {})",
+        //     self.info,
+        //     self.borrow.is_some(),
+        //     self.moved,
+        // );
+
         // if we didn't borrow this data, we have to deallocate the associated heap allocation
         if self.borrow.is_none() {
             // if this bundle wasn't actually used/emptied, we have to deallocate the object inside,
