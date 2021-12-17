@@ -60,6 +60,7 @@ impl<T: LuaRealField> UserData for Vector2<T> {
 
         methods.add_meta_function(MetaMethod::Add, |_, (a, b): (Self, Self)| Ok(a + b));
         methods.add_meta_function(MetaMethod::Sub, |_, (a, b): (Self, Self)| Ok(a - b));
+        methods.add_meta_function(MetaMethod::Unm, |_, a: Self| Ok(-a));
 
         methods.add_method_mut("normalize_mut", |_, this, ()| {
             this.normalize_mut();
@@ -124,6 +125,7 @@ impl<T: LuaRealField> UserData for Vector3<T> {
 
         methods.add_meta_function(MetaMethod::Add, |_, (a, b): (Self, Self)| Ok(a + b));
         methods.add_meta_function(MetaMethod::Sub, |_, (a, b): (Self, Self)| Ok(a - b));
+        methods.add_meta_function(MetaMethod::Unm, |_, a: Self| Ok(-a));
 
         methods.add_method_mut("normalize_mut", |_, this, ()| {
             this.normalize_mut();
