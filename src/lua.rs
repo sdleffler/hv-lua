@@ -1890,6 +1890,18 @@ impl Lua {
             Ok(())
         });
 
+        if alchemy_table.is::<dyn std::fmt::Debug>() {
+            methods.add_function("debug_fmt", |_lua, this: AnyUserData| {
+                Ok(format!("{:?}", this.dyn_borrow::<dyn std::fmt::Debug>()?))
+            });
+        }
+
+        if alchemy_table.is::<dyn std::fmt::Display>() {
+            methods.add_function("to_string", |_lua, this: AnyUserData| {
+                Ok(format!("{}", this.dyn_borrow::<dyn std::fmt::Display>()?))
+            });
+        }
+
         T::add_fields(&mut fields);
         T::add_methods(&mut methods);
 

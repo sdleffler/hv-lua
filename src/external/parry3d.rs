@@ -59,6 +59,9 @@ impl UserData for Capsule {
 
     fn add_type_methods<'lua, M: UserDataMethods<'lua, Type<Self>>>(methods: &mut M) {
         methods.add_function("new", |_, (a, b, radius)| Ok(Self::new(a, b, radius)));
+        methods.add_function(
+            "new_z", |_, (half_height, radius)| Ok(Self::new_z(half_height, radius))
+        );
     }
 }
 

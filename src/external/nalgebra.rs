@@ -1,6 +1,7 @@
 use hv_alchemy::Type;
 use hv_math::Normed;
 use nalgebra::{Isometry2, Isometry3, Point2, Point3, RealField, Unit, Vector2, Vector3};
+use std::fmt;
 
 use crate::{
     AnyUserData, FromLua, Lua, MetaMethod, Result, Table, ToLua, UserData, UserDataFields,
@@ -23,7 +24,12 @@ macro_rules! get_set_coords {
 
 impl<T: LuaRealField> UserData for Vector2<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table.add_clone().add_copy().add_send().add_sync();
+        table
+            .add_clone()
+            .add_copy()
+            .add_send()
+            .add_sync()
+            .add::<dyn fmt::Debug>();
     }
 
     fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
@@ -88,6 +94,7 @@ impl<T: LuaRealField> UserData for Vector3<T> {
             .add_copy()
             .add_send()
             .add_sync()
+            .add::<dyn fmt::Debug>()
             .add_conversion_from::<Vector3<T>>();
     }
 
@@ -103,7 +110,7 @@ impl<T: LuaRealField> UserData for Vector3<T> {
 
         methods.add_function(
             "add",
-            |lua, (a, b, out): (Self, Self, Option<AnyUserData>)| match out {
+            |lua, (out, a, b): (Option<AnyUserData>, Self, Self)| match out {
                 Some(ud) => {
                     *ud.borrow_mut::<Self>()? = a + b;
                     Ok(ud)
@@ -114,7 +121,7 @@ impl<T: LuaRealField> UserData for Vector3<T> {
 
         methods.add_function(
             "sub",
-            |lua, (a, b, out): (Self, Self, Option<AnyUserData>)| match out {
+            |lua, (out, a, b): (Option<AnyUserData>, Self, Self)| match out {
                 Some(ud) => {
                     *ud.borrow_mut::<Self>()? = a - b;
                     Ok(ud)
@@ -173,7 +180,12 @@ impl<'lua, T: LuaRealField> ToLua<'lua> for Point3<T> {
 
 impl<T: LuaRealField> UserData for Isometry2<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table.add_clone().add_copy().add_send().add_sync();
+        table
+            .add_clone()
+            .add_copy()
+            .add_send()
+            .add_sync()
+            .add::<dyn fmt::Debug>();
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(_methods: &mut M) {}
@@ -187,15 +199,43 @@ impl<T: LuaRealField> UserData for Isometry2<T> {
             Ok(Self::translation(x, y))
         });
         methods.add_function("rotation", |_, angle: T| Ok(Self::rotation(angle)));
+        methods.add_function("identity", |_, ()| Ok(Self::identity()));
     }
 }
 
 impl<T: LuaRealField> UserData for Isometry3<T> {
     fn on_metatable_init(table: Type<Self>) {
-        table.add_clone().add_copy().add_send().add_sync();
+        table
+            .add_clone()
+            .add_copy()
+            .add_send()
+            .add_sync()
+            .add::<dyn fmt::Debug>();
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(_methods: &mut M) {}
+    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_function(
+            "mul",
+            |lua, (out, a, b): (Option<AnyUserData>, Self, Self)| match out {
+                Some(ud) => {
+                    *ud.borrow_mut::<Self>()? = a * b;
+                    Ok(ud)
+                }
+                None => lua.create_userdata(a * b),
+            },
+        );
+
+        methods.add_function(
+            "div",
+            |lua, (out, a, b): (Option<AnyUserData>, Self, Self)| match out {
+                Some(ud) => {
+                    *ud.borrow_mut::<Self>()? = a / b;
+                    Ok(ud)
+                }
+                None => lua.create_userdata(a / b),
+            },
+        );
+    }
 
     fn add_type_methods<'lua, M: UserDataMethods<'lua, Type<Self>>>(methods: &mut M)
     where
@@ -210,6 +250,7 @@ impl<T: LuaRealField> UserData for Isometry3<T> {
         methods.add_function("rotation", |_, axis_angle: Vector3<T>| {
             Ok(Self::rotation(axis_angle))
         });
+        methods.add_function("identity", |_, ()| Ok(Self::identity()));
     }
 }
 
