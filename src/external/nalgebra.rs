@@ -244,6 +244,9 @@ impl<T: LuaRealField> UserData for Isometry3<T> {
         methods.add_function("new", |_, (t, a): (Vector3<T>, Vector3<T>)| {
             Ok(Self::new(t, a))
         });
+        methods.add_function("new_z", |_, (t, r): (Vector3<T>, T)| {
+            Ok(Self::new(t, Vector3::z() * r))
+        });
         methods.add_function("translation", |_, (x, y, z): (T, T, T)| {
             Ok(Self::translation(x, y, z))
         });
