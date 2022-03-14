@@ -149,14 +149,13 @@ impl<'lua, T: 'static + MaybeSend + UserData> ToLua<'lua> for T {
 
 impl<'lua, T: 'static + UserData> FromLua<'lua> for T {
     #[inline]
-    fn from_lua(value: Value<'lua>, _: &'lua Lua) -> Result<T> {
-        match value {
-            Value::UserData(ud) => Ok(ud.clone_or_take::<T>()?),
-            _ => Err(Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "userdata",
-                message: None,
-            }),
+    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<T> {
+        match &value {
+            Value::UserData(ud) => match ud.clone_or_take::<T>() {
+                Ok(x) => Ok(x),
+                Err(_) => <T as UserData>::from_lua_fallback(value, lua),
+            },
+            _ => <T as UserData>::from_lua_fallback(value, lua),
         }
     }
 }
