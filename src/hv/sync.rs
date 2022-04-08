@@ -71,6 +71,7 @@ where
     T: 'static + UserData + MaybeSend + MaybeSync,
     C: 'static + ?Sized + MaybeSend + MaybeSync,
 {
+    #[allow(unused_variables)]
     fn on_metatable_init(table: Type<Self>) {
         #[cfg(feature = "send")]
         table.add_send().add_sync();

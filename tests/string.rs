@@ -53,7 +53,7 @@ fn test_string_views() -> Result<()> {
 
     assert_eq!(empty.to_str()?, "");
     assert_eq!(empty.as_bytes_with_nul(), &[0]);
-    assert_eq!(empty.as_bytes(), &[]);
+    assert!(empty.as_bytes().is_empty());
 
     Ok(())
 }
