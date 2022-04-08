@@ -68,7 +68,7 @@ fn test_table() -> Result<()> {
     );
     assert_eq!(
         table2.sequence_values().collect::<Result<Vec<i64>>>()?,
-        vec![]
+        Vec::<i64>::new()
     );
 
     // sequence_values should only iterate until the first border
