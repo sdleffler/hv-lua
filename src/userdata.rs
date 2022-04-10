@@ -700,6 +700,17 @@ pub trait UserData: Sized {
         Self: 'static + MaybeSend,
     {
     }
+    /// Allows you to add extra conversion ways from Lua values to this type.
+    fn from_lua_fallback(lua_value: Value, _: &Lua) -> Result<Self> {
+        match lua_value {
+            Value::UserData(_) => Err(Error::UserDataTypeMismatch),
+            x => Err(Error::FromLuaConversionError {
+                from: x.type_name(),
+                to: "userdata",
+                message: None,
+            }),
+        }
+    }
 }
 
 // Wraps UserData in a way to always implement `serde::Serialize` trait.

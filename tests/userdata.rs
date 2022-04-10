@@ -627,3 +627,35 @@ fn test_userdata_wrapped() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_from_lua_fallback() -> Result<()> {
+    struct MyUserData(i64);
+    impl UserData for MyUserData {
+        fn from_lua_fallback(value: Value, _: &Lua) -> hv_lua::Result<Self> {
+            match value {
+                Value::Integer(x) => Ok(MyUserData(x)),
+                Value::UserData(_) => Err(Error::UserDataTypeMismatch),
+                x => Err(Error::FromLuaConversionError {
+                    from: x.type_name(),
+                    to: "userdata",
+                    message: None,
+                }),
+            }
+        }
+    }
+    let lua = Lua::new();
+    let globals = lua.globals();
+    globals.set("my_userdata", MyUserData(1))?;
+    let (MyUserData(first), MyUserData(second)) = lua
+        .load(
+            r#"
+        local to_return = 2
+        return my_userdata, to_return
+    "#,
+        )
+        .eval()?;
+    assert_eq!(1, first);
+    assert_eq!(2, second);
+    Ok(())
+}
